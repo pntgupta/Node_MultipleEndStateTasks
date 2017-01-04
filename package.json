@@ -1,0 +1,20 @@
+{
+  "name": "multiple_end_states_task_finder",
+  "version": "1.0.0",
+  "description": "yoo",
+  "main": "app.js",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "cheerio": "^0.22.0",
+    "express": "^4.14.0",
+    "jQuery": "^1.7.4",
+    "jsdom": "^9.8.3",
+    "xml2js": "^0.4.17"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Punit",
+  "license": "ISC"
+}

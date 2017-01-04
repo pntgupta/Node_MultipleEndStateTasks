@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Find XML</title>
+	<script src="http://punit:8080/socket.io/socket.io.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+</head>
+<style>
+	td, th {
+	    padding: 4px;
+	}
+	.app{
+		margin-top: 20px;
+	}
+</style>
+<body>
+	<div class="container">
+		<div class="navbar navbar-default text-center">
+			<h3>Find XML</h3>
+		</div>
+		<div class="row">
+			<div class="col-md-4">
+				<label for="inputPath">Enter Task Repo Path</label>
+				<input type="text" name="inputPath" class="form-control" id="inputPath" value="E:\sim5service\XMLs\TaskRepository.xml">
+			</div>
+			<div class="col-md-1">
+				<button type="submit" class="btn btn-primary" id="searchbtn" style="margin-top:24px;">Search</button>
+			</div>
+			<div class="col-md-1" style="margin-top: 18px;">
+				<h4><a id="downloadAnchorElem" style="display:none">Download</a></h4>
+			</div>
+			<div class="col-md-2" style="margin-top: 18px;">
+				<h4>Total Instances: <span id="totalInstances">0</span></h4>
+			</div>
+			<div class="col-md-2" style="margin-top: 18px;">
+				<h4>Total XMLs: <span id="totalXMLs">0</span></h4>
+			</div>
+			<div class="col-md-2">
+				<div class="radio">
+					<label><input type="radio" name="optradio" checked>Search All</label>
+				</div>
+				<div class="radio">
+					<label><input type="radio" name="optradio" id="diffCompRadio">Only Diff Comp</label>
+				</div>
+			</div>
+		</div>
+		<div class="row app">
+			<div class="col-md-3">
+				<h4>ACCESS</h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Total Tasks : <span id="AccessTotal">0</span></h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Matched Instances :<span id="AccessMatches">0</span></h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Matched XMLs :<span id="AccessMatches_XML">0</span></h4>
+			</div>
+			<div class="col-md-12">				
+				<table border="1" id="AccessResults" width="100%" style="text-align:center;">
+					<tr>
+						<th class="col-md-7 text-center">XML PATH</th>
+						<th class="col-md-2 text-center">STEP ID</th>
+						<th class="col-md-3 text-center">StateID/Followup</th>
+					</tr>				
+				</table>
+			</div>
+		</div>
+		<div class="row app">
+			<div class="col-md-3">
+				<h4>WORD</h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Total Tasks : <span id="WordTotal">0</span></h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Matched Instances :<span id="WordMatches">0</span></h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Matched XMLs :<span id="WordMatches_XML">0</span></h4>
+			</div>
+			<div class="col-md-12">
+				<table border="1" id="WordResults" width="100%" style="text-align:center;">
+					<tr>
+						<th class="col-md-7 text-center">XML PATH</th>
+						<th class="col-md-2 text-center">STEP ID</th>
+						<th class="col-md-3 text-center">StateID/Followup</th>
+					</tr>				
+				</table>
+			</div>
+		</div>
+		<div class="row app">
+			<div class="col-md-3">
+				<h4>EXCEL</h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Total Tasks : <span id="ExcelTotal">0</span></h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Matched Instances :<span id="ExcelMatches">0</span></h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Matched XMLs :<span id="ExcelMatches_XML">0</span></h4>
+			</div>
+			<div class="col-md-12">
+				<table border="1" id="ExcelResults" width="100%" style="text-align:center;">
+					<tr>
+						<th class="col-md-7 text-center">XML PATH</th>
+						<th class="col-md-2 text-center">STEP ID</th>
+						<th class="col-md-3 text-center">StateID/Followup</th>
+					</tr>				
+				</table>
+			</div>
+		</div>
+		<div class="row app">
+			<div class="col-md-3">
+				<h4>PPT</h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Total Tasks : <span id="PPTTotal">0</span></h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Matched Instances :<span id="PPTMatches">0</span></h4>
+			</div>
+			<div class="col-md-3">
+				<h4>Matched XMLs :<span id="PPTMatches_XML">0</span></h4>
+			</div>
+			<div class="col-md-12">
+				<table border="1" id="PPTResults" width="100%" style="text-align:center;">
+					<tr>
+						<th class="col-md-7 text-center">XML PATH</th>
+						<th class="col-md-2 text-center">STEP ID</th>
+						<th class="col-md-3 text-center">StateID/Followup</th>
+					</tr>				
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	var socket = io.connect('http://punit:8080'),
+		matches = {totalInstances_AllApplications : null, totalXML_AllApplications : null, applicationName : null, multiIsLastStatesXML_AllApplications : null},
+		resultsJSON,XMLFound,currentSocketCount,
+		totalTaskCount_AllApplications;
+
+	$("#searchbtn").click(function(){
+		matches.totalInstances_AllApplications = [0,0,0,0],
+		matches.totalXML_AllApplications = [0,0,0,0],
+		matches.multiIsLastStatesXML_AllApplications = [0,0,0,0],
+		resultsJSON=[],
+		XMLFound=0,
+		currentSocketCount=0,
+		totalTaskCount_AllApplications = [0,0,0,0]; //Access,Word,Excel,PPT;
+
+		//Clear table on every new search
+		ClearTable("AccessResults");
+		ClearTable("WordResults");
+		ClearTable("ExcelResults");
+		ClearTable("PPTResults");
+
+		socket.emit('search',$("#inputPath").val());
+	});
+
+	socket.on('XMLContent',function(data){
+			currentSocketCount++;
+			matches.applicationName = false;
+
+			// just remove the declaration using replace()
+    		data.xmlContent = data.xmlContent.replace('<?xml version="1.0"?>', '');
+    		﻿data.xmlContent = data.xmlContent.replace('<?xml version="1.0" encoding="utf-8"?>', '');
+
+				var	xml = $.parseXML(data.xmlContent),
+	  			$Xml = $(xml),
+				statesArrayForEachStep = [],
+				stepTextIDs = [],
+				stateIDs = [];		
+
+
+				//Find multiple islast="true" instances
+				if($Xml.find("state[islast='true']").length > 1){
+					switch(data.appID){
+							case "28" : 
+									 matches.multiIsLastStatesXML_AllApplications[0]++;
+									 break;
+							case "26" : 
+									 matches.multiIsLastStatesXML_AllApplications[1]++;
+									 break;
+							case "27" : 
+									 matches.multiIsLastStatesXML_AllApplications[2]++;
+									 break;
+							case "29" : 
+									 matches.multiIsLastStatesXML_AllApplications[3]++;
+									 break;
+					}
+				}		
+				
+				//Count Tasks of Each Application
+				switch(data.appID){
+					case "28" :totalTaskCount_AllApplications[0]++;
+							 break;
+					case "26" : totalTaskCount_AllApplications[1]++;
+							 break;
+					case "27" : totalTaskCount_AllApplications[2]++;
+							 break;
+					case "29" : totalTaskCount_AllApplications[3]++;
+							 break;
+				}
+
+				//Array containing all step text IDs
+				$Xml.find('texts_formatted txt').each(function(){
+					stepTextIDs.push($(this).attr("id"));
+				});
+
+				//Calculating an array which contain array of state IDs for each step
+				stepTextIDs.forEach(function(txtID,index){
+					var currentStestateIDs = [];
+					$Xml.find('state[txt='+txtID+']').each(function(){
+						currentStestateIDs.push($(this).attr('id'));
+						stateIDs.push($(this).attr('id'));
+					});
+					statesArrayForEachStep.push(currentStestateIDs);
+				});
+
+
+				stepTextIDs.forEach(function(txtID,index){
+
+					//Means if last step then no need to check
+					if(statesArrayForEachStep[index+1]){
+						var nextStepFollowupStateIDs = [],
+							currentStepStateIDs = [];
+
+						//Find all states of each step
+						$Xml.find('state[txt='+txtID+']').each(function(){
+							var self = this;
+							//Compare Followup
+							$(this).find('event').each(function(){
+								if(followupId = $(this).attr('followup')){
+									//IF in next step and not already counted
+									if($.inArray(followupId,statesArrayForEachStep[index+1])!=-1 && $.inArray(followupId,nextStepFollowupStateIDs)===-1){
+										nextStepFollowupStateIDs.push(followupId);
+										currentStepStateIDs.push($(self).attr("id"));
+									}
+								}
+								if($(this).children().length!=0){
+									$(this).children().each(function(){
+										if(followupId = $(this).attr('followup')){
+											if($.inArray(followupId,statesArrayForEachStep[index+1])!=-1 && $.inArray(followupId,nextStepFollowupStateIDs)===-1){
+												nextStepFollowupStateIDs.push(followupId);
+												currentStepStateIDs.push($(self).attr("id"));
+											}
+										}
+									});
+								}
+							});
+						});
+						if(nextStepFollowupStateIDs.length>1){
+
+							var validCase = false;
+
+							//Finding only cases in which diff comps are used
+							if($("#diffCompRadio")[0].checked === true){
+
+								var compUsed = [];
+
+								nextStepFollowupStateIDs.forEach(function(value,index){
+									$Xml.find("state[id='"+value+"'] comps").children().each(function(){
+										if(compUsed[index])
+											compUsed[index].push($(this).attr("id"));
+										else{
+											compUsed[index] = [];
+											compUsed[index].push($(this).attr("id"));
+										}
+									});
+
+									compUsed[index] = compUsed[index].sort();
+									if(compUsed[index-1] && compUsed[index-1].toString() !== compUsed[index].toString()){
+										validCase = true;
+										return false;
+									}
+								});
+							}
+
+
+							if($("#diffCompRadio")[0].checked === false || validCase === true){
+								var stateAndFollowup = "",stateAndFollowup_downloadFormat = "";
+
+								matches.applicationName = true;
+
+								nextStepFollowupStateIDs.forEach(function(value,index){
+									stateAndFollowup += "<p>StateID : "+currentStepStateIDs[index]+" , Followup : "+nextStepFollowupStateIDs[index]+"</p>";
+									stateAndFollowup_downloadFormat += currentStepStateIDs[index]+"/"+nextStepFollowupStateIDs[index]+", ";
+								});
+
+								resultsJSON.push({'Task':data.taskID,'StepID':txtID,'StateID/Followup':stateAndFollowup_downloadFormat.substr(0,stateAndFollowup_downloadFormat.length-2)});
+
+								switch(data.appID){
+									case "28" : AppendInTable("AccessResults",data.taskID,txtID,stateAndFollowup);
+											 matches.totalInstances_AllApplications[0]++;
+											 break;
+									case "26" : AppendInTable("WordResults",data.taskID,txtID,stateAndFollowup);
+											 matches.totalInstances_AllApplications[1]++;
+											 break;
+									case "27" : AppendInTable("ExcelResults",data.taskID,txtID,stateAndFollowup);
+											 matches.totalInstances_AllApplications[2]++;
+											 break;
+									case "29" : AppendInTable("PPTResults",data.taskID,txtID,stateAndFollowup);
+											 matches.totalInstances_AllApplications[3]++;
+											 break;
+								}
+							}
+						}
+					}					
+				});
+
+				if(matches.applicationName)					{
+					switch(data.appID){
+							case "28" : 
+									 matches.totalXML_AllApplications[0]++;
+									 break;
+							case "26" : 
+									 matches.totalXML_AllApplications[1]++;
+									 break;
+							case "27" : 
+									 matches.totalXML_AllApplications[2]++;
+									 break;
+							case "29" : 
+									 matches.totalXML_AllApplications[3]++;
+									 break;
+					}
+				}
+
+				//Total Instances
+				var sum=0;
+				matches.totalInstances_AllApplications.forEach(function(v){
+					sum+=v;});
+
+				//Total Tasks
+				var sum_xml=0;
+				matches.totalXML_AllApplications.forEach(function(v){
+					sum_xml+=v;});
+
+				$("#totalInstances").html(sum);
+				$("#totalXMLs").html(sum_xml);
+				$("#AccessTotal").html(totalTaskCount_AllApplications[0]);
+				$("#AccessMatches").html(matches.totalInstances_AllApplications[0]);
+				$("#AccessMatches_XML").html(matches.totalXML_AllApplications[0]);
+				$("#WordTotal").html(totalTaskCount_AllApplications[1]);
+				$("#WordMatches").html(matches.totalInstances_AllApplications[1]);
+				$("#WordMatches_XML").html(matches.totalXML_AllApplications[1]);
+				$("#ExcelTotal").html(totalTaskCount_AllApplications[2]);
+				$("#ExcelMatches").html(matches.totalInstances_AllApplications[2]);
+				$("#ExcelMatches_XML").html(matches.totalXML_AllApplications[2]);
+				$("#PPTTotal").html(totalTaskCount_AllApplications[3]);
+				$("#PPTMatches").html(matches.totalInstances_AllApplications[3]);
+				$("#PPTMatches_XML").html(matches.totalXML_AllApplications[3]);
+
+				if(currentSocketCount === XMLFound){
+					var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resultsJSON));
+					var dlAnchorElem = $('#downloadAnchorElem');
+					dlAnchorElem.css({"display":"initial"});
+					dlAnchorElem[0].setAttribute("href",dataStr);
+					dlAnchorElem[0].setAttribute("download", "data.json");
+
+					//Console multiple isLast="true" count
+					console.log("Multi IsLast='true' Instances : \n\nAccess : "+matches.multiIsLastStatesXML_AllApplications[0]+"\nWord : "+matches.multiIsLastStatesXML_AllApplications[1]+"\nExcel : "+matches.multiIsLastStatesXML_AllApplications[2]+"\nPPT : "+matches.multiIsLastStatesXML_AllApplications[3]);
+				}
+			});
+			
+		//Event triggered from Node to calc total no. of tasks
+		socket.on("Finished",function(data){
+			XMLFound = data;
+		});
+
+function AppendInTable(tableID,taskID,txtID,stateAndFollowup){
+	$("#"+tableID).append("<tr><td>"+taskID+"</td><td>"+txtID+"</td><td>"+stateAndFollowup+"</td></tr>");
+}
+
+function ClearTable(tableID){
+	$("#"+tableID).html('');
+	$("#"+tableID).append("<tr><th class='col-md-7 text-center'>XML PATH</th><th class='col-md-2 text-center'>STEP ID</th><th class='col-md-3 text-center'>StateID/Followup</th></tr>");
+}
+
+</script>
+</html>
